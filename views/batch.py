@@ -190,7 +190,9 @@ def _render_table(df: pd.DataFrame) -> None:
                 "Keyakinan", min_value=0.0, max_value=1.0, format="percent"
             ),
             "topik": st.column_config.TextColumn("Topik", width="medium"),
-            "kata_kunci": st.column_config.TextColumn("Kata kunci"),
+            "kata_kunci": st.column_config.TextColumn(
+                "Kata kunci", help="Kata kunci representatif topik (dipilih dari 10 kata teratas c-TF-IDF)."
+            ),
             "status": st.column_config.TextColumn("Status"),
         },
     )

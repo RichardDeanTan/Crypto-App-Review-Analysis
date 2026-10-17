@@ -1,10 +1,30 @@
 {
-  "0": "Harga & Transaksi Koin",
-  "1": "Verifikasi & Masalah Akun",
-  "2": "Gagal Login / Akses Aplikasi",
-  "3": "Pengalaman Investasi Kripto",
-  "4": "Kemudahan Penggunaan (UI/UX)",
-  "5": "Deposit & Withdraw",
-  "6": "Performa & Bug Aplikasi",
-  "7": "Ramah Pemula"
+  "0": {
+    "name": "Keluhan Transaksi & Layanan CS",
+    "keywords": ["saldo", "customer service", "perbaiki"]
+  },
+  "1": {
+    "name": "Login & Verifikasi Akun",
+    "keywords": ["login", "kode", "email"]
+  },
+  "2": {
+    "name": "Biaya & Penarikan Dana",
+    "keywords": ["biaya", "fee", "minimal"]
+  },
+  "3": {
+    "name": "Pengalaman Investasi Kripto",
+    "keywords": ["dipahami", "belajar", "berinvestasi"]
+  },
+  "4": {
+    "name": "Bug, Error & Performa Aplikasi",
+    "keywords": ["gagal", "ngelag"]
+  },
+  "5": {
+    "name": "Kemudahan & Fitur Aplikasi (UI/UX)",
+    "keywords": ["gampang", "simpel", "alert"]
+  },
+  "6": {
+    "name": "Kesan Pemula & Saran Fitur",
+    "keywords": ["belajar", "bermanfaat", "tambahkan"]
+  }
 }

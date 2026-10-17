@@ -3,7 +3,7 @@
 Aplikasi untuk menjalankan dua model skripsi:
 
 - **Analisis Sentimen** — IndoBERTweet hasil fine-tuning (negatif / netral / positif)
-- **Topic Modelling** — BERTopic (IndoBERT + UMAP + K-Means, 8 topik)
+- **Topic Modelling** — BERTopic (IndoBERT + KernelPCA + K-Means, 7 topik)
 
 Kedua model menerima input berbeda, mengikuti data training masing-masing:
 
@@ -38,7 +38,7 @@ app/
 │   └── pipeline.py             # teks mentah → cleaning → sentimen + topik
 ├── assets/
 │   ├── kamus_kata_baku.csv     # kamus terbaru (sudah termasuk di paket)
-│   ├── topic_labels.json       # nama tiap topik (boleh diedit)
+│   ├── topic_labels.json       # nama + kata kunci representatif tiap topik (boleh diedit)
 │   └── template_batch.csv
 ├── sa_model/                   # ⚠️ hasil extract model sentimen
 │   ├── config.json
@@ -157,7 +157,7 @@ Kolom hasil unduhan: `review` (input sentimen), `review_bersih` (input topik), `
 
 | Ingin mengubah | File |
 |---|---|
-| Nama topik | `assets/topic_labels.json` |
+| Nama topik & kata kunci representatif | `assets/topic_labels.json` |
 | Batas baris batch, ambang keyakinan default, jumlah kata kunci | `core/config.py` |
 | Angka metrik di halaman Tentang Model | `core/config.py` (`SA_INFO`, `TM_INFO`) |
 | Contoh review di Analisis Tunggal | `views/single.py` (`EXAMPLES`) |

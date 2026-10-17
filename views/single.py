@@ -45,7 +45,7 @@ def _render_sentiment(row: dict) -> None:
             )
 
 
-def _render_topic(row: dict) -> None:
+def _render_topic(row: dict, topic_model) -> None:
     with st.container(border=True):
         st.caption("TOPIK")
         if not isinstance(row["topik"], str):
@@ -59,21 +59,24 @@ def _render_topic(row: dict) -> None:
             return
         st.markdown(f"### {row['topik']}")
         st.markdown(f"Topik **{row['topik_id']}**")
-        st.markdown("**Kata kunci topik**")
+        st.markdown("**Kata kunci representatif**")
         keywords = [k.strip() for k in (row["kata_kunci"] or "").split(",") if k.strip()]
         st.markdown(" ".join(f":blue-badge[{k}]" for k in keywords))
+        with st.expander("10 kata teratas dari model (c-TF-IDF)"):
+            st.markdown(", ".join(topic_model.model_words(int(row["topik_id"]), 10)))
+            st.caption("Kata kunci representatif di atas dipilih dari daftar ini.")
         st.caption(
             "Topik ditentukan oleh K-Means (setiap review masuk ke tepat satu klaster), "
             "sehingga tidak ada skor probabilitas topik."
         )
 
 
-def _render_result(row: dict) -> None:
+def _render_result(row: dict, topic_model) -> None:
     col_sa, col_tm = st.columns(2, gap="medium")
     with col_sa:
         _render_sentiment(row)
     with col_tm:
-        _render_topic(row)
+        _render_topic(row, topic_model)
 
     if show_cleaned_text():
         with st.expander("Lihat teks yang masuk ke masing-masing model", icon=":material/cleaning_services:"):
@@ -125,7 +128,7 @@ def main() -> None:
         return
 
     st.divider()
-    _render_result(result)
+    _render_result(result, res.topic)
 
 
 main()

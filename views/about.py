@@ -6,8 +6,8 @@ import streamlit as st
 from core import config
 from views.common import DEVICE, get_resources
 
-PIPELINE_DOT = """
-digraph {
+PIPELINE_DOT = f"""
+digraph {{
   rankdir=LR;
   bgcolor="transparent";
   node [shape=box, style="rounded,filled", fillcolor="#EEF2FF", color="#3E63DD",
@@ -22,14 +22,14 @@ digraph {
   sent  [label="Sentimen\\nnegatif / netral / positif", fillcolor="#E6F6EB", color="#30A46C"];
 
   emb   [label="Embedding\\nIndoBERT (mean pooling)"];
-  umap  [label="UMAP\\n768 → 10 dimensi"];
-  km    [label="K-Means\\n8 klaster"];
+  red   [label="{config.TM_INFO['reducer_label']}\\n{config.TM_INFO['embedding_dim']} → {config.TM_INFO['n_components']} dimensi"];
+  km    [label="K-Means\\n{config.TM_INFO['n_clusters']} klaster"];
   topic [label="Topik +\\nkata kunci (c-TF-IDF)", fillcolor="#E6F6EB", color="#30A46C"];
 
   raw -> tok [label="teks asli", fontsize=9, fontcolor="#8B8D98"];
   tok -> sa -> sent;
-  raw -> clean -> emb -> umap -> km -> topic;
-}
+  raw -> clean -> emb -> red -> km -> topic;
+}}
 """
 
 
@@ -112,8 +112,17 @@ def main() -> None:
         st.dataframe(_kv_table(config.TM_INFO["data"]), hide_index=True, width="stretch")
         st.caption("Hybrid Score = 0.5 × Coherence (Cv) + 0.5 × KL Score")
 
+    st.markdown("**Pemilihan model final**")
+    st.dataframe(pd.DataFrame(config.TM_INFO["selection"]), hide_index=True, width="stretch")
+    st.caption(config.TM_INFO["selection_note"])
+
     st.markdown("**Daftar topik**")
-    st.dataframe(res.topic.overview(n_keywords=10), hide_index=True, width="stretch")
+    st.dataframe(res.topic.overview(n_words=10), hide_index=True, width="stretch")
+    st.caption(
+        "*Kata kunci representatif* dipilih manual dari 10 kata teratas c-TF-IDF agar kata umum "
+        "(misalnya *malah*, *padahal*, *kok*) tidak mendominasi tampilan. Kolom terakhir adalah "
+        "kata teratas asli dari model."
+    )
 
     st.divider()
     st.caption(f"Perangkat inferensi: **{DEVICE.upper()}**")

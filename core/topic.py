@@ -1,9 +1,11 @@
 """
-Model topik: BERTopic (IndoBERT + UMAP + K-Means) dari `tm_model/bertopic_model.pkl`.
+Model topik: BERTopic (IndoBERT + KernelPCA + K-Means) dari `tm_model/bertopic_model.pkl`.
 
 File pickle disimpan dengan `save_embedding_model=False`, jadi IndoBERT di-load terpisah
 dari HuggingFace lalu diberikan ke BERTopic. Prediksi topik berjalan lewat
-UMAP.transform → KMeans.predict, sama seperti pipeline saat training.
+KernelPCA.transform → KMeans.predict, sama seperti pipeline saat training.
+(Di dalam objek BERTopic, KernelPCA tersimpan di atribut `umap_model` dan K-Means di
+`hdbscan_model` — itu hanya nama argumen bawaan BERTopic.)
 """
 
 import json
@@ -26,10 +28,20 @@ def build_indobert_embedder(model_name: str, device: str = "cpu") -> SentenceTra
     return SentenceTransformer(modules=[word_embedding, pooling], device=device)
 
 
-def load_topic_labels(path: str | Path) -> dict[int, str]:
+def load_topic_labels(path: str | Path) -> dict[int, dict]:
+    """
+    Baca `topic_labels.json`. Format per topik:
+        {"name": "Nama Topik", "keywords": ["kata", "kunci", "representatif"]}
+    Format lama (hanya string nama) tetap didukung.
+    """
     with open(path, encoding="utf-8") as f:
         raw = json.load(f)
-    return {int(k): v for k, v in raw.items()}
+    labels = {}
+    for key, value in raw.items():
+        if isinstance(value, str):
+            value = {"name": value}
+        labels[int(key)] = {"name": value.get("name"), "keywords": list(value.get("keywords") or [])}
+    return labels
 
 
 class TopicModel:
@@ -37,7 +49,7 @@ class TopicModel:
         self,
         model_path: str | Path,
         embedding_model_name: str,
-        labels: dict[int, str],
+        labels: dict[int, dict],
         device: str = "cpu",
         embed_batch_size: int = 32,
     ):
@@ -49,17 +61,27 @@ class TopicModel:
         info = self.model.get_topic_info()
         self.topic_ids = [int(t) for t in info["Topic"] if int(t) != -1]
         self.topic_sizes = {int(r.Topic): int(r.Count) for r in info.itertuples()}
-        self.topic_keywords = {
-            tid: [w for w, _ in (self.model.get_topic(tid) or [])] for tid in self.topic_ids
+        self.topic_words = {
+            tid: [w for w, _ in (self.model.get_topic(tid) or []) if w] for tid in self.topic_ids
         }
 
     def name(self, topic_id: int) -> str:
-        return self.labels.get(topic_id, f"Topik {topic_id}")
+        label = self.labels.get(topic_id, {})
+        return label.get("name") or f"Topik {topic_id}"
 
-    def keywords(self, topic_id: int, n: int = 2) -> list[str]:
-        return self.topic_keywords.get(topic_id, [])[:n]
+    def model_words(self, topic_id: int, n: int = 10) -> list[str]:
+        """Kata teratas c-TF-IDF langsung dari model (tanpa kurasi)."""
+        return self.topic_words.get(topic_id, [])[:n]
 
-    def predict(self, texts: list[str], n_keywords: int = 2) -> list[dict]:
+    def keywords(self, topic_id: int, n: int = 3) -> list[str]:
+        """
+        Kata kunci yang ditampilkan di UI: kata kunci representatif dari topic_labels.json
+        (dipilih manual dari 10 kata teratas c-TF-IDF). Kalau tidak ada, pakai kata teratas model.
+        """
+        curated = self.labels.get(topic_id, {}).get("keywords") or []
+        return curated[:n] if curated else self.model_words(topic_id, n)
+
+    def predict(self, texts: list[str], n_keywords: int = 3) -> list[dict]:
         """Prediksi topik untuk teks yang SUDAH di-cleaning."""
         embeddings = self.embedder.encode(
             texts,
@@ -78,17 +100,18 @@ class TopicModel:
         ]
 
     def warmup(self) -> None:
-        """Panggilan pertama UMAP memicu kompilasi numba (lama); jalankan sekali di awal."""
+        """Satu prediksi awal supaya IndoBERT dan model siap sebelum request pertama user."""
         self.predict(["aplikasi ini sangat bagus dan mudah digunakan"])
 
-    def overview(self, n_keywords: int = 10) -> pd.DataFrame:
+    def overview(self, n_words: int = 10) -> pd.DataFrame:
         """Tabel ringkas semua topik (untuk halaman Tentang Model)."""
         rows = [
             {
                 "ID": tid,
                 "Nama Topik": self.name(tid),
                 "Jumlah Dokumen (training)": self.topic_sizes.get(tid, 0),
-                "Kata Kunci": ", ".join(self.keywords(tid, n_keywords)),
+                "Kata Kunci Representatif": ", ".join(self.keywords(tid, 5)),
+                f"{n_words} Kata Teratas (c-TF-IDF)": ", ".join(self.model_words(tid, n_words)),
             }
             for tid in self.topic_ids
         ]

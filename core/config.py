@@ -35,9 +35,9 @@ SA_MAX_LENGTH = 64          # sama dengan TR_MAX_LENGTH saat training
 SA_BATCH_SIZE = 16
 EMBED_BATCH_SIZE = 32
 
-BATCH_LIMIT = 10000           # maksimum baris untuk Batch Mode
+BATCH_LIMIT = 100           # maksimum baris untuk Batch Mode
 SINGLE_MAX_CHARS = 1000     # maksimum karakter input Single Mode
-TOP_KEYWORDS = 5            # jumlah kata kunci topik yang ditampilkan
+TOP_KEYWORDS = 3            # maks. kata kunci representatif topik yang ditampilkan
 
 DEFAULT_CONFIDENCE_THRESHOLD = 0.60
 
@@ -107,26 +107,47 @@ SA_INFO = {
 }
 
 TM_INFO = {
-    "pipeline": "BERTopic (IndoBERT + UMAP + K-Means)",
+    "pipeline": "BERTopic (IndoBERT + KernelPCA + K-Means)",
     "input": "Teks bersih (dataset_clean.csv)",
+    # Dipakai juga oleh diagram alur di halaman Tentang Model
+    "reducer_label": "Kernel PCA (RBF)",
+    "embedding_dim": 768,
+    "n_components": 5,
+    "n_clusters": 7,
     "hyperparameters": {
         "Embedding": "indobenchmark/indobert-base-p1 (mean pooling)",
-        "UMAP n_neighbors": "30",
-        "UMAP n_components": "10",
-        "UMAP metric": "cosine",
-        "K-Means n_clusters": "8",
+        "KernelPCA kernel": "rbf",
+        "KernelPCA n_components": "5",
+        "KernelPCA gamma": "0.001302 (1.0 × 1/768, default scikit-learn)",
+        "K-Means n_clusters": "7",
         "K-Means n_init": "10",
         "c-TF-IDF vectorizer": "max_features=5000, min_df=2, max_df=0.95",
     },
     "data": {
         "Jumlah dokumen": "4.117 review (setelah cleaning & hapus duplikat)",
+        "Grid search": "72 kombinasi (n_components 5/10/30 × gamma 0.1×/1×/10× × n_cluster 3–10)",
     },
     "metrics": {
-        "Coherence (Cv)": "0.6660",
-        "KL Divergence": "0.0431",
-        "KL Score": "0.9793",
-        "Hybrid Score": "0.8227",
+        "Coherence (Cv)": "0.6316",
+        "KL Divergence": "0.0255",
+        "KL Score": "0.9869",
+        "Hybrid Score": "0.8093",
     },
+    # Pemilihan model final (Hybrid Score menyaring top-3, model dipilih lewat inspeksi kualitatif)
+    "selection": [
+        {"Konfigurasi": "Baseline (Skenario 1)", "n_components": 5, "gamma": "1.0×", "n_cluster": 5,
+         "Coherence (Cv)": "0.5989", "KL Score": "0.9836", "Hybrid Score": "0.7913", "Rank": "8 / 72"},
+        {"Konfigurasi": "Rank 1 Hybrid Score", "n_components": 5, "gamma": "1.0×", "n_cluster": 8,
+         "Coherence (Cv)": "0.6371", "KL Score": "0.9907", "Hybrid Score": "0.8139", "Rank": "1 / 72"},
+        {"Konfigurasi": "Terpilih (dipakai di aplikasi)", "n_components": 5, "gamma": "1.0×", "n_cluster": 7,
+         "Coherence (Cv)": "0.6316", "KL Score": "0.9869", "Hybrid Score": "0.8093", "Rank": "2 / 72"},
+    ],
+    "selection_note": (
+        "Hybrid Score dipakai untuk menyaring kandidat (top-3), sedangkan model final dipilih lewat "
+        "inspeksi kualitatif topik. Konfigurasi 7 klaster dipilih karena topiknya lebih mudah "
+        "diinterpretasi, dengan selisih Hybrid Score hanya 0.0046 dari Rank 1 dan tetap jauh di atas "
+        "baseline (+0.0180)."
+    ),
 }
 
 # Langkah text_cleaning.ipynb (hanya untuk input model topik)

@@ -1,14 +1,5 @@
-"""
-Entry point aplikasi Streamlit.
-
-Jalankan dari dalam folder app:
-    streamlit run app.py
-"""
-
 import sys
-
 import streamlit as st
-
 from core import config
 
 st.set_page_config(
@@ -17,12 +8,10 @@ st.set_page_config(
     layout="wide",
 )
 
-from views.common import DEVICE, load_resources  # noqa: E402  (setelah set_page_config)
+from views.common import DEVICE, load_resources
 
 
 def _check_python_version() -> None:
-    # bertopic_model.pkl berisi fungsi numba (dari UMAP) yang di-pickle di Python 3.13 (Kaggle).
-    # Bytecode Python beda antar versi minor, jadi file ini HANYA bisa di-load di Python 3.13.
     if sys.version_info[:2] != config.REQUIRED_PYTHON:
         req = ".".join(map(str, config.REQUIRED_PYTHON))
         st.error(
@@ -86,7 +75,7 @@ def _render_sidebar(res) -> None:
             f"F1-Macro test: `{sa_f1}` {sa_std}"
         )
         st.markdown(
-            "**Topik** — BERTopic (IndoBERT + UMAP + K-Means)  \n"
+            f"**Topik** — {config.TM_INFO['pipeline']}  \n"
             f"{len(res.topic.topic_ids)} topik · Cv `{config.TM_INFO['metrics']['Coherence (Cv)']}`"
         )
 
