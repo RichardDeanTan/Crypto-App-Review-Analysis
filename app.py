@@ -29,22 +29,24 @@ def _check_files() -> None:
         return
     st.error("File berikut belum ditemukan:", icon=":material/error:")
     st.markdown("\n".join(f"- `{p.relative_to(config.BASE_DIR)}`" for p in missing))
-    st.info("Lihat README.md bagian *Struktur folder* untuk letak file yang benar.")
+    st.info("File ini harus ikut di repo. Lihat README.md bagian *Struktur folder*.")
     st.stop()
 
 
 def _load_models():
     try:
         with st.spinner(
-            "Memuat model... (pertama kali bisa 1–3 menit karena mengunduh IndoBERT ±500MB)",
+            "Memuat model... (pertama kali bisa beberapa menit karena mengunduh model ±1 GB)",
             show_time=True,
         ):
             return load_resources()
     except Exception as e:  # tampilkan error yang jelas, bukan traceback mentah
         st.error(f"Gagal memuat model: {type(e).__name__}: {e}", icon=":material/error:")
         st.info(
-            "Penyebab umum: tidak ada koneksi internet saat pertama kali run (IndoBERT perlu "
-            "diunduh), versi library berbeda dengan Kaggle, atau file model rusak/tidak lengkap."
+            "Penyebab umum:\n"
+            "- Tidak ada koneksi internet saat model perlu diunduh dari HuggingFace.\n"
+            f"- Repo HF salah/belum ada/private: `{config.HF_SA_REPO}` dan `{config.HF_TM_REPO}`.\n"
+            "- Versi library berbeda dengan Kaggle, atau file model rusak/tidak lengkap."
         )
         with st.expander("Detail error"):
             st.exception(e)
@@ -84,7 +86,11 @@ def _render_sidebar(res) -> None:
                 kw = ", ".join(res.topic.keywords(tid, config.TOP_KEYWORDS))
                 st.markdown(f"**T{tid} · {res.topic.name(tid)}**  \n:gray[{kw}]")
 
-        st.caption(f"Perangkat: {DEVICE.upper()}")
+        st.caption(
+            f"Perangkat: {DEVICE.upper()}  \n"
+            f"Model sentimen: {res.sa_location.source} (`{res.sa_location.label}`)  \n"
+            f"Model topik: {res.tm_location.source} (`{res.tm_location.label}`)"
+        )
 
 
 pages = st.navigation([

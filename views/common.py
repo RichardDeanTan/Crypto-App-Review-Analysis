@@ -8,6 +8,7 @@ import streamlit as st
 import torch
 
 from core import config
+from core.model_source import ModelLocation, sentiment_model_location, topic_model_file
 from core.preprocessing import load_slang_dict
 from core.sentiment import SentimentModel
 from core.topic import TopicModel, load_topic_labels
@@ -20,6 +21,8 @@ class Resources:
     slang_dict: dict
     sentiment: SentimentModel
     topic: TopicModel
+    sa_location: ModelLocation
+    tm_location: ModelLocation
 
 
 @st.cache_resource(show_spinner=False)
@@ -28,29 +31,36 @@ def _load_slang_dict() -> dict:
 
 
 @st.cache_resource(show_spinner=False)
-def _load_sentiment_model() -> SentimentModel:
-    return SentimentModel(config.SA_MODEL_SOURCE, max_length=config.SA_MAX_LENGTH, device=DEVICE)
+def _load_sentiment_model() -> tuple[SentimentModel, ModelLocation]:
+    loc = sentiment_model_location()
+    model = SentimentModel(loc.location, max_length=config.SA_MAX_LENGTH, device=DEVICE)
+    return model, loc
 
 
 @st.cache_resource(show_spinner=False)
-def _load_topic_model() -> TopicModel:
+def _load_topic_model() -> tuple[TopicModel, ModelLocation]:
+    loc = topic_model_file()
     model = TopicModel(
-        config.TM_MODEL_PATH,
+        loc.location,
         config.EMBEDDING_MODEL_NAME,
         labels=load_topic_labels(config.TOPIC_LABELS_PATH),
         device=DEVICE,
         embed_batch_size=config.EMBED_BATCH_SIZE,
     )
     model.warmup()
-    return model
+    return model, loc
 
 
 def load_resources() -> Resources:
     """Muat semua model sekali (di-cache oleh Streamlit selama server hidup)."""
+    sentiment, sa_loc = _load_sentiment_model()
+    topic, tm_loc = _load_topic_model()
     return Resources(
         slang_dict=_load_slang_dict(),
-        sentiment=_load_sentiment_model(),
-        topic=_load_topic_model(),
+        sentiment=sentiment,
+        topic=topic,
+        sa_location=sa_loc,
+        tm_location=tm_loc,
     )
 
 

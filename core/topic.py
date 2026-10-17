@@ -21,9 +21,23 @@ except ImportError:  # fallback versi lama
     from sentence_transformers.models import Pooling, Transformer
 
 
+def _load_transformer(model_name: str) -> Transformer:
+    """
+    Repo indobenchmark/indobert-base-p1 hanya punya `pytorch_model.bin` di branch utama, sehingga
+    transformers mengunduh .bin LALU mengunduh lagi `model.safetensors` hasil konversi otomatis
+    di background (total ±1 GB). Dengan use_safetensors=True hanya versi safetensors (±500 MB)
+    yang diunduh. Bobotnya identik. Kalau gagal (misal folder lokal yang hanya berisi .bin),
+    kembali ke cara default.
+    """
+    try:
+        return Transformer(model_name, model_kwargs={"use_safetensors": True})
+    except Exception:
+        return Transformer(model_name)
+
+
 def build_indobert_embedder(model_name: str, device: str = "cpu") -> SentenceTransformer:
     """Bangun embedder persis seperti notebook: Transformer + mean pooling."""
-    word_embedding = Transformer(model_name)
+    word_embedding = _load_transformer(model_name)
     pooling = Pooling(word_embedding.get_word_embedding_dimension(), pooling_mode="mean")
     return SentenceTransformer(modules=[word_embedding, pooling], device=device)
 

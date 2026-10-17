@@ -20,11 +20,36 @@ TOPIC_LABELS_PATH = ASSETS_DIR / "topic_labels.json"
 TEMPLATE_BATCH_PATH = ASSETS_DIR / "template_batch.csv"
 
 SA_MODEL_DIR = BASE_DIR / "sa_model"
-TM_MODEL_PATH = BASE_DIR / "tm_model" / "bertopic_model.pkl"
+TM_MODEL_FILENAME = "bertopic_model.pkl"
+TM_MODEL_PATH = BASE_DIR / "tm_model" / TM_MODEL_FILENAME
 
-# Sumber model sentimen: default folder lokal. Saat deploy, bisa diganti ke repo
-# HuggingFace Hub (misal "username/indobertweet-sentimen") lewat environment variable.
-SA_MODEL_SOURCE = os.getenv("SA_MODEL_SOURCE", str(SA_MODEL_DIR))
+# ── Sumber model: folder lokal / HuggingFace Hub ─────────────────────────
+def _setting(name: str, default: str | None = None) -> str | None:
+    """Baca pengaturan dari environment variable, lalu dari Streamlit secrets (kalau ada).
+    Nilai dari secrets juga disalin ke environment supaya library lain (huggingface_hub
+    untuk HF_TOKEN) ikut membacanya."""
+    value = os.getenv(name)
+    if value:
+        return value
+    try:
+        import streamlit as st
+
+        if name in st.secrets:
+            value = str(st.secrets[name])
+            os.environ.setdefault(name, value)
+            return value
+    except Exception:  # tidak ada secrets.toml → abaikan
+        pass
+    return default
+
+
+HF_SA_REPO = _setting("HF_SA_REPO", "RichTan/skripsi-indobertweet-sentimen")
+HF_TM_REPO = _setting("HF_TM_REPO", "RichTan/skripsi-bertopic-kpca")
+_setting("HF_TOKEN")  # opsional, hanya perlu kalau repo HF dibuat private
+
+# FORCE_HF_HUB=1 → abaikan folder lokal dan selalu unduh dari HF Hub.
+# Berguna untuk mengetes "mode cloud" di laptop sebelum deploy.
+FORCE_HF_HUB = (_setting("FORCE_HF_HUB", "0") or "0").strip().lower() in ("1", "true", "yes")
 
 # Embedding model untuk BERTopic (tidak di-fine-tune, diunduh dari HuggingFace).
 # Bisa diganti ke folder lokal lewat environment variable kalau ingin jalan offline.
@@ -167,9 +192,10 @@ PREPROCESSING_STEPS = [
 
 
 def missing_required_files() -> list[Path]:
-    """Daftar file wajib yang belum ada (untuk pesan error yang jelas saat start)."""
-    required = [KAMUS_PATH, TOPIC_LABELS_PATH, TM_MODEL_PATH]
-    # Model sentimen hanya dicek kalau sumbernya folder lokal.
-    if SA_MODEL_SOURCE == str(SA_MODEL_DIR):
-        required += [SA_MODEL_DIR / "config.json", SA_MODEL_DIR / "model.safetensors"]
+    """File yang WAJIB ada di repo (untuk pesan error yang jelas saat start).
+
+    File model tidak dicek di sini karena bisa diunduh otomatis dari HuggingFace Hub
+    (lihat core/model_source.py).
+    """
+    required = [KAMUS_PATH, TOPIC_LABELS_PATH, TEMPLATE_BATCH_PATH]
     return [p for p in required if not p.exists()]

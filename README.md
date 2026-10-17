@@ -35,7 +35,8 @@ app/
 │   ├── preprocessing.py        # cleaning (sama dengan text_cleaning.ipynb), untuk model topik
 │   ├── sentiment.py            # IndoBERTweet
 │   ├── topic.py                # BERTopic
-│   └── pipeline.py             # teks mentah → cleaning → sentimen + topik
+│   ├── pipeline.py             # teks mentah → cleaning → sentimen + topik
+│   └── model_source.py         # pilih sumber model: folder lokal atau HuggingFace Hub
 ├── assets/
 │   ├── kamus_kata_baku.csv     # kamus terbaru (sudah termasuk di paket)
 │   ├── topic_labels.json       # nama + kata kunci representatif tiap topik (boleh diedit)
@@ -55,6 +56,16 @@ app/
 ```
 
 File bertanda ⚠️ tidak ikut di paket kode, jadi harus kamu taruh sendiri.
+
+---
+
+## Deploy online
+
+Panduan lengkap deploy ke Streamlit Community Cloud (model disimpan di HuggingFace Hub) ada di
+**[README-streamlit.md](README-streamlit.md)**.
+
+Kalau folder `sa_model/` / `tm_model/` tidak ada, app otomatis mengunduh model dari
+HuggingFace Hub (`RichTan/skripsi-indobertweet-sentimen`, `RichTan/skripsi-bertopic-kpca`).
 
 ---
 
