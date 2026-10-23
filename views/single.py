@@ -10,8 +10,8 @@ from views.common import confidence_threshold, get_resources, show_cleaned_text
 EXAMPLES = {
     "Negatif": "Aplikasinya lemot bgt, tiap mau login selalu gagal terus 😡 tolong diperbaiki!!",
     "Positif": "WD ke bank cepet bgt, fee jg murah. Tampilannya simpel, gampang dipake pemula 👍",
-    "Netral": "Baru coba download, msh belajar cara pakainya. Nanti diupdate lg reviewnya",
-    "Harga": "Harga koin pas beli beda jauh sm yg di chart, market order malah kena harga atas",
+    "Netral": "Tolong integrasikan indodax dengan ledger / hardware wallet lain",
+    "Kesan": "sangat mudah dan gampang di fahami, semoga pengguna baru semakin bertambah",
 }
 
 
